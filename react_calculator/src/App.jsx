@@ -1,14 +1,12 @@
 import './App.css'
 import Calculator1 from './components/calc1'
-import CalculatorOpt from './components/calc2'
-import CalculatorGPT from './components/calc3'
+import CalculatorFinal from './components/calc2'
 
 function App() {
   return (
     <>
-      <Calculator1 />
-      <CalculatorOpt />
-      <CalculatorGPT />
+      {/* <Calculator1 /> */}
+      <CalculatorFinal />
     </>
   )
 }
