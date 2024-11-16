@@ -11,12 +11,12 @@ function CalculatorFinal() {
         ) {
             return;
         }
-        setInput(input + value);
+        setInput(input + value); //"12+"
     };
 
     const handleEqual = () => {
         try {
-            const result = eval(input);
+            const result = eval(input); //"12+30"
             setInput(String(result));
         } catch (error) {
             setInput("Error");

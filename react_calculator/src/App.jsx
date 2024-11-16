@@ -5,7 +5,7 @@ import CalculatorFinal from './components/calc2'
 function App() {
   return (
     <>
-      {/* <Calculator1 /> */}
+      <Calculator1 />
       <CalculatorFinal />
     </>
   )
