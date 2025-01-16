@@ -3,7 +3,14 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
 
   theme: {
-    extend: {},
+    extend: {
+      colors:{
+        "txt-color": "#2E2E2E",
+      },
+      fontFamily: {
+        poppins: ["Poppins"],
+      },
+    },
   },
   plugins: [],
 };
