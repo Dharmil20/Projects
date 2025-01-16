@@ -11,6 +11,8 @@ export default {
       },
       spacing: {
         '18': '4.5rem',
+        '1.8': '1.125rem',
+        "100": "30rem",
       },
       maxWidth: {
         "1.5xl": "72.563rem",
