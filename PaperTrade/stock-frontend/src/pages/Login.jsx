@@ -2,51 +2,55 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; // Import CSS for styling
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePassVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setLoading(true);
-    setError(null);
 
     try {
-      // Send the login request to the backend
       const response = await fetch('http://localhost:5500/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }), // Only email and password
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-      // console.log(data);
 
-      if (response.ok) {
-        // Successfully logged in, set the user and navigate
+      if (data.go) {
         setUser({
           id: data.id,
           name: data.name,
           email: data.email,
-          balance: 100000, // Starting balance
+          balance: 100000,
           createdAt: data.createdAt,
         });
-        localStorage.setItem('authToken', data.token); // Store the token
-        navigate('/');
+        localStorage.setItem('authToken', data.token);
+        toast.success('Login successful! Redirecting...', { position: "top-right" });
+
+        setTimeout(() => navigate('/'), 1500); // Redirect after 1.5 seconds
       } else {
-        // Login failed, show the error message
-        setError(data.message || 'Login failed');
+        toast.error(data.message || 'Login failed', { position: "top-right" });
       }
     } catch (err) {
-      setError('Error connecting to the server');
+      toast.error('Error connecting to the server', { position: "top-right" });
       console.error(err);
     } finally {
       setLoading(false);
@@ -55,6 +59,7 @@ function Login() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <ToastContainer /> {/* Toast container to display notifications */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <TrendingUp className="h-12 w-12 text-indigo-600" />
@@ -95,26 +100,32 @@ function Login() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="flex justify-center items-center mt-1">
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
+                {showPassword ? 
+                  <FaEyeSlash onClick={togglePassVisibility} className="cursor-pointer ml-2" /> 
+                  : 
+                  <FaEye onClick={togglePassVisibility} className="cursor-pointer ml-2" />
+                }
               </div>
             </div>
 
             <div>
               <button
                 type="submit"
+                disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                Sign in
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
           </form>

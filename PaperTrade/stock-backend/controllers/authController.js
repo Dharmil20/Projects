@@ -1,62 +1,103 @@
-const { UserModel } = require("../models/user");
 const bcrypt = require("bcrypt");
+const express = require("express");
 const jwt = require("jsonwebtoken");
+const { default: mongoose } = require("mongoose");
+const { UserModel } = require("../models/user.js");
+const { z } = require("zod");
+require("dotenv").config();
+
 
 const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const requiredBody = z.object({
+      email: z.string().min(3).max(30).email(),
+      name: z.string().min(3).max(30),
+      password: z
+        .string()
+        .min(8)
+        .max(30)
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d@$!%*?&]{8,30}$/,
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        ),
+    });
 
-    const userFound = await UserModel.findOne({ email });
+    const parsedDataWithSuccess = requiredBody.safeParse(req.body);
 
-    const hashedPassword = await bcrypt.hash(password, 5);
-
-    if (!userFound) {
-      await UserModel.create({
-        name,
-        email,
-        password: hashedPassword,
-      });
-      res.status(201).json({
-        message: "You are Signed Up",
-        success: true,
-      });
-    } else {
-      res.status(409).json({
-        message: "You are already Signed Up",
-        success: false,
+    if (!parsedDataWithSuccess.success) {
+      return res.status(400).json({
+        message: "Incorrect format",
+        error: parsedDataWithSuccess.error.issues,
       });
     }
-  } catch (e) {}
+
+    const { name, email, password } = req.body;
+
+    const existingUser = await UserModel.findOne({ email: email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User Already Signed up!",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await UserModel.create({
+      email: email,
+      password: hashedPassword,
+      name: name,
+    });
+
+    res.status(200).json({
+      message: "User Signed Up!",
+    });
+  } catch (error) {
+    console.error("Error in signup:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 };
 
 const signin = async (req, res) => {
   const { email, password } = req.body;
 
-  const userFound = await UserModel.findOne({ email });
-  
-  if (!userFound) {
-      res.status(403).json({
-          message: "User not Signed Up",
-          success: false,
-        });
-        return;
+  try {
+    console.log("Finding user in database...");
+    const user = await UserModel.findOne({ email: email });
+    if (!user) {
+      return res.status(404).json({ message: "User not signed up!" });
     }
-    
-    const passwordMatch = bcrypt.compare(password, userFound.password);
 
-  if (passwordMatch) {
+    console.log("Comparing passwords...");
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "Invalid Credentials", go: false });
+    }
+    // ✅ Ensure JWT secret exists
+    if (!process.env.JWT_USER_PASSWORD) {
+      throw new Error("JWT Secret Key is missing!");
+    }
     const token = jwt.sign(
-      { userId: userFound._id.toString() },
-      process.env.JWT_SECRET
+      { userId: user._id.toString() },
+      process.env.JWT_USER_PASSWORD
     );
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+
     res.json({
-      token,
+      message: "Logged in successfully",
+      token: token,
+      go: true,
     });
-  } else {
-    res.status(403).json({
-      message: "Inavlid Credentials",
-    });
+  } catch (error) {
+    console.error("Error in signin:", error);
+    res.status(500).json({ message: "Internal Server Error", go: false });
   }
 };
 
