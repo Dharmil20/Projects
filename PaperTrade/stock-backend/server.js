@@ -1,4 +1,3 @@
-// server.js
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -6,7 +5,7 @@ const { NseIndia } = require("stock-nse-india");
 const mongoose = require("mongoose");
 const authRouter = require("./routes/authRouter");
 const tradeRouter = require("./routes/tradeRouter");
-const portfolioRouter = require("./routes/portfolioRouter"); // Import the portfolio router
+const portfolioRouter = require("./routes/portfolioRouter");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -16,9 +15,6 @@ app.use(express.json());
 
 const nseIndia = new NseIndia();
 
-/**
- * GET /api/stocks - Fetch all stock symbols
- */
 app.get("/api/stocks", async (req, res) => {
   try {
     const symbols = await nseIndia.getAllStockSymbols();
@@ -28,9 +24,6 @@ app.get("/api/stocks", async (req, res) => {
   }
 });
 
-/**
- * GET /api/stocks/:symbol - Fetch stock details
- */
 app.get("/api/stocks/:symbol", async (req, res) => {
   try {
     const stockDetails = await nseIndia.getEquityDetails(req.params.symbol);
@@ -40,10 +33,9 @@ app.get("/api/stocks/:symbol", async (req, res) => {
   }
 });
 
-// Use the authentication, trading, and portfolio routes
 app.use("/api/auth", authRouter);
 app.use("/api/trade", tradeRouter);
-app.use("/api/info", portfolioRouter); // Use the portfolio router
+app.use("/api/info", portfolioRouter);
 
 async function main() {
   mongoose
